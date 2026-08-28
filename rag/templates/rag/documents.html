@@ -1,0 +1,97 @@
+{% extends "rag/base.html" %}
+
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h1 class="card-title mb-4">Documents</h1>
+
+    <form id="load-form" class="mb-3">
+      <div class="mb-3">
+        <label for="files" class="form-label">Select text files</label>
+        <input
+          class="form-control"
+          type="file"
+          id="files"
+          name="files"
+          multiple
+          accept=".txt,text/plain"
+          required
+        >
+      </div>
+      <button type="submit" class="btn btn-primary">Load documents</button>
+    </form>
+
+    <button id="clear-btn" class="btn btn-outline-danger mb-3">Clear documents</button>
+
+    <div id="status" class="alert alert-secondary" role="alert" style="display: none;"></div>
+
+    <h2 class="mt-4">Loaded documents</h2>
+    <ul id="doc-list" class="list-group"></ul>
+  </div>
+</div>
+
+<script>
+  const docList = document.getElementById("doc-list");
+  const statusEl = document.getElementById("status");
+
+  async function refreshDocs() {
+    const res = await fetch("/api/documents/");
+    const data = await res.json();
+
+    docList.innerHTML = "";
+
+    if (!Array.isArray(data.documents)) {
+      data.documents = [];
+    }
+
+    data.documents.forEach((name) => {
+      const li = document.createElement("li");
+      li.className = "list-group-item";
+      li.textContent = name;
+      docList.appendChild(li);
+    });
+  }
+
+  document.getElementById("load-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const form = e.target;
+    const fd = new FormData(form);
+    fd.append("action", "load");
+
+    statusEl.textContent = "Loading...";
+    statusEl.style.display = "block";
+
+    const res = await fetch("/api/documents/", {
+      method: "POST",
+      body: fd,
+    });
+
+    const data = await res.json();
+    statusEl.textContent = JSON.stringify(data, null, 2);
+    statusEl.className = data.loaded && data.loaded.length > 0 ? "alert alert-success" : "alert alert-danger";
+    await refreshDocs();
+  });
+
+  document.getElementById("clear-btn").addEventListener("click", async () => {
+    statusEl.textContent = "Clearing...";
+    statusEl.style.display = "block";
+
+    const body = new URLSearchParams({
+      action: "clear",
+    });
+
+    const res = await fetch("/api/documents/", {
+      method: "POST",
+      body: body,
+    });
+
+    const data = await res.json();
+    statusEl.textContent = JSON.stringify(data, null, 2);
+    statusEl.className = "alert alert-info";
+    await refreshDocs();
+  });
+
+  refreshDocs();
+</script>
+{% endblock %}

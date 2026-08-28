@@ -1,0 +1,53 @@
+{% extends "rag/base.html" %}
+
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h1 class="card-title mb-4">Chat</h1>
+
+    <form id="chat-form" class="mb-3">
+      <div class="input-group">
+        <input
+          class="form-control"
+          id="question"
+          name="question"
+          placeholder="Ask a question about the loaded documents"
+          required
+        >
+        <button type="submit" class="btn btn-primary">Ask</button>
+      </div>
+    </form>
+
+    <div id="status" class="alert alert-secondary" role="alert" style="display: none;"></div>
+    <pre id="answer" class="bg-light p-3 rounded" style="white-space: pre-wrap;"></pre>
+  </div>
+</div>
+
+<script>
+  const form = document.getElementById("chat-form");
+  const answerEl = document.getElementById("answer");
+  const statusEl = document.getElementById("status");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const question = document.getElementById("question").value.trim();
+    if (!question) return;
+
+    statusEl.textContent = "Thinking...";
+    answerEl.textContent = "";
+
+    const res = await fetch("/api/chat/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ question }),
+    });
+
+    const data = await res.json();
+    statusEl.textContent = "";
+    answerEl.textContent = data.answer || JSON.stringify(data, null, 2);
+  });
+</script>
+{% endblock %}
