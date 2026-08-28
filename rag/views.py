@@ -37,7 +37,7 @@ def _get_rag() -> LocalRag:
             chunk_max_chars=int(os.environ.get("RAG_CHUNK_MAX_CHARS", "900")),
             chunk_overlap=int(os.environ.get("RAG_CHUNK_OVERLAP", "120")),
             top_k=int(os.environ.get("RAG_TOP_K", "5")),
-            min_score=float(os.environ.get("RAG_MIN_SCORE", "0.15")),
+            min_score=float(os.environ.get("RAG_MIN_SCORE", "0.25")),
             embed_batch_size=int(os.environ.get("RAG_EMBED_BATCH_SIZE", "32")),
         )
 
