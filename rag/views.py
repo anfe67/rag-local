@@ -104,7 +104,7 @@ def document_api(request):
     errors = []
 
     for file_obj in files:
-        name = os.path.basename(file_obj.name) or "unknown_file"
+        name = str(os.path.basename(file_obj.name) or "unknown_file")
 
         try:
             text = _read_text_file(file_obj)
@@ -114,7 +114,7 @@ def document_api(request):
             rag.add_document(name, text)
             loaded.append(name)
 
-        except Exception as exc:
+        except BaseException as exc:
             errors.append({
                 "file": name,
                 "error": str(exc),
