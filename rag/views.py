@@ -84,7 +84,7 @@ def document_api(request):
         rag.clear()
         return JsonResponse({
             "status": "cleared",
-            "documents": [],
+            "documents": rag.document_names(),
         })
 
     if action != "load":
