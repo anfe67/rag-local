@@ -64,5 +64,8 @@ TIME_ZONE = "UTC"
 USE_TZ = True
 
 STATIC_URL = "static/"
+STATICFILES_DIRS = [
+    BASE_DIR / "rag" / "static",
+]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

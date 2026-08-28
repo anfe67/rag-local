@@ -112,7 +112,7 @@ class LocalRag:
         chunk_max_chars: int = 900,
         chunk_overlap: int = 120,
         top_k: int = 5,
-        min_score: float = 0.15,
+        min_score: float = 0.25,
         embed_batch_size: int = 32,
     ):
         self._data_dir = Path(data_dir)
