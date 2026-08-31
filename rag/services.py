@@ -306,6 +306,28 @@ class LocalRag:
                     names.append(name)
             return names
 
+    def vector_stats(self) -> dict[str, Any]:
+        with self._lock:
+            if not self._chunks:
+                return {
+                    "total_vectors": 0,
+                    "longest_vector_size": 0,
+                    "longest_vector_text": None,
+                }
+
+            longest_chunk = max(self._chunks, key=lambda c: len(c["text"]))
+            return {
+                "total_vectors": len(self._chunks),
+                "longest_vector_size": len(longest_chunk["text"]),
+                "longest_vector_text": longest_chunk["text"],
+            }
+
+    def model_info(self) -> dict[str, str]:
+        return {
+            "llm_model": self._llm_model,
+            "embed_model": self._embed_model,
+        }
+
     def clear(self) -> None:
         with self._lock:
             self._clear_state()

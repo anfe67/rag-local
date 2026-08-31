@@ -73,7 +73,13 @@ def document_api(request):
 
     # GET: return loaded document names
     if request.method == "GET":
-        return JsonResponse({"documents": rag.document_names()})
+        return JsonResponse(
+            {
+                "documents": rag.document_names(),
+                "vector_stats": rag.vector_stats(),
+                "model_info": rag.model_info(),
+            }
+        )
 
     # POST: load or clear
     action = (request.POST.get("action") or request.GET.get("action") or "load").lower()

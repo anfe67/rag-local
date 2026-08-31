@@ -4,6 +4,7 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
+*.zip
 
 # Django
 db.sqlite3
@@ -15,3 +16,6 @@ db.sqlite3
 
 # Environment
 .venv
+
+# IDE
+.idea/

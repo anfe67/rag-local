@@ -6,17 +6,23 @@
     <h1 class="card-title mb-4">Documents</h1>
 
     <form id="load-form" class="mb-3">
-      <div class="mb-3">
-        <label for="files" class="form-label">Select text files</label>
+      <div class="mb-3 d-flex align-items-center gap-2">
         <input
-          class="form-control"
           type="file"
           id="files"
           name="files"
           multiple
           accept=".txt,text/plain"
           required
+          style="display: none;"
         >
+        <button type="button" id="file-select-btn" class="btn btn-outline-primary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+          Select files
+        </button>
+        <span id="file-count" class="text-muted">No files selected</span>
       </div>
       <button type="submit" class="btn btn-primary">Load documents</button>
     </form>
@@ -25,14 +31,64 @@
 
     <div id="status" class="alert alert-secondary" role="alert" style="display: none;"></div>
 
-    <h2 class="mt-4">Loaded documents</h2>
-    <ul id="doc-list" class="list-group"></ul>
+    <div class="row mt-4">
+      <div class="col-md-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="card-title">Model Configuration</h5>
+            <table class="table table-sm">
+              <tbody>
+                <tr>
+                  <th scope="row">LLM Model</th>
+                  <td id="llm-model">-</td>
+                </tr>
+                <tr>
+                  <th scope="row">Embedding Model</th>
+                  <td id="embed-model">-</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="card-title">Vector Statistics</h5>
+            <p><strong>Total vectors:</strong> <span id="total-vectors">0</span></p>
+            <p><strong>Longest vector size:</strong> <span id="longest-vector-size">0</span> characters</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="card-title">Loaded Documents</h5>
+            <ul id="doc-list" class="list-group" style="max-height: 300px; overflow-y: auto;"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
   const docList = document.getElementById("doc-list");
   const statusEl = document.getElementById("status");
+  const fileInput = document.getElementById("files");
+  const fileSelectBtn = document.getElementById("file-select-btn");
+  const fileCount = document.getElementById("file-count");
+
+  fileSelectBtn.addEventListener("click", () => {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener("change", () => {
+    const count = fileInput.files.length;
+    fileCount.textContent = count === 0 ? "No files selected" : `${count} file${count === 1 ? '' : 's'} selected`;
+  });
 
   async function refreshDocs() {
     const res = await fetch("/api/documents/");
@@ -50,6 +106,16 @@
       li.textContent = name;
       docList.appendChild(li);
     });
+
+    // Update vector statistics
+    const stats = data.vector_stats || {};
+    document.getElementById("total-vectors").textContent = stats.total_vectors || 0;
+    document.getElementById("longest-vector-size").textContent = stats.longest_vector_size || 0;
+
+    // Update model information
+    const modelInfo = data.model_info || {};
+    document.getElementById("llm-model").textContent = modelInfo.llm_model || "-";
+    document.getElementById("embed-model").textContent = modelInfo.embed_model || "-";
   }
 
   document.getElementById("load-form").addEventListener("submit", async (e) => {
