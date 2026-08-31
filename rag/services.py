@@ -6,7 +6,7 @@ import re
 import threading
 import unicodedata
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import faiss
 import numpy as np
@@ -24,7 +24,7 @@ OUT_OF_SCOPE_TEMPLATE = (
 )
 
 
-def out_of_scope_message(document_names: List[str]) -> str:
+def out_of_scope_message(document_names: list[str]) -> str:
     names = ", ".join(document_names) if document_names else "no documents"
     return OUT_OF_SCOPE_TEMPLATE.format(names=names)
 
@@ -37,14 +37,14 @@ def _normalize_text(text: str) -> str:
     return text.strip()
 
 
-def chunk_text(text: str, max_chars: int = 900, overlap: int = 120) -> List[str]:
+def chunk_text(text: str, max_chars: int = 900, overlap: int = 120) -> list[str]:
     text = _normalize_text(text)
     if not text:
         return []
 
     max_chars = max(100, int(max_chars))
     overlap = max(0, min(int(overlap), max_chars // 2))
-    chunks: List[str] = []
+    chunks: list[str] = []
 
     # Prefer splitting on blank lines first.
     segments = re.split(r"\n\s*\n", text)
@@ -83,7 +83,7 @@ def chunk_text(text: str, max_chars: int = 900, overlap: int = 120) -> List[str]
         chunks.append(buffer)
 
     # Final safety pass.
-    final_chunks: List[str] = []
+    final_chunks: list[str] = []
     for chunk in chunks:
         if len(chunk) <= max_chars:
             final_chunks.append(chunk)
@@ -126,9 +126,9 @@ class LocalRag:
         self._embed_batch_size = int(embed_batch_size)
 
         self._lock = threading.RLock()
-        self._chunks: List[Dict[str, Any]] = []
+        self._chunks: list[dict[str, Any]] = []
         self._vectors: np.ndarray = np.empty((0, 0), dtype="float32")
-        self._index: Optional[faiss.Index] = None
+        self._index: faiss.Index | None = None
 
         self._load_state()
 
@@ -224,7 +224,7 @@ class LocalRag:
                 raise ValueError("Vector dimension mismatch")
             if self._index.ntotal != len(self._chunks):
                 raise ValueError("Chunk/vector count mismatch")
-        except Exception:
+        except (ValueError, json.JSONDecodeError, OSError):
             self._clear_state()
 
     def _rebuild_index(self) -> None:
@@ -246,11 +246,11 @@ class LocalRag:
     # Ollama helpers
     # -----------------------------
 
-    def _embed(self, texts: List[str]) -> np.ndarray:
+    def _embed(self, texts: list[str]) -> np.ndarray:
         if not texts:
             return np.empty((0, 0), dtype="float32")
 
-        embeddings_out: List[List[float]] = []
+        embeddings_out: list[list[float]] = []
 
         for i in range(0, len(texts), self._embed_batch_size):
             batch = texts[i : i + self._embed_batch_size]
@@ -295,9 +295,9 @@ class LocalRag:
     # public API
     # -----------------------------
 
-    def document_names(self) -> List[str]:
+    def document_names(self) -> list[str]:
         with self._lock:
-            names: List[str] = []
+            names: list[str] = []
             seen = set()
             for chunk in self._chunks:
                 name = chunk["doc"]
@@ -310,7 +310,7 @@ class LocalRag:
         with self._lock:
             self._clear_state()
 
-    def add_document(self, name: str, text: str) -> List[str]:
+    def add_document(self, name: str, text: str) -> list[str]:
         with self._lock:
             name = os.path.basename(name) or "document.txt"
 
@@ -330,11 +330,13 @@ class LocalRag:
 
             start_id = len(self._chunks)
             for i, chunk in enumerate(chunks):
-                self._chunks.append({
-                    "doc": name,
-                    "id": start_id + i,
-                    "text": chunk,
-                })
+                self._chunks.append(
+                    {
+                        "doc": name,
+                        "id": start_id + i,
+                        "text": chunk,
+                    }
+                )
 
             self._rebuild_index()
             self._save_state()
@@ -382,9 +384,7 @@ class LocalRag:
 
             context_blocks = []
             for _score, chunk in results:
-                context_blocks.append(
-                    f"[Document: {chunk['doc']}]\n{chunk['text']}"
-                )
+                context_blocks.append(f"[Document: {chunk['doc']}]\n{chunk['text']}")
             context = "\n\n".join(context_blocks)
 
             out_of_scope = out_of_scope_message(doc_names)
@@ -457,11 +457,7 @@ ANSWER:
         if bool(keep_mask.all()):
             return
 
-        self._chunks = [
-            chunk
-            for chunk, keep in zip(self._chunks, keep_mask)
-            if keep
-        ]
+        self._chunks = [chunk for chunk, keep in zip(self._chunks, keep_mask) if keep]
 
         if keep_mask.size:
             self._vectors = self._vectors[keep_mask]

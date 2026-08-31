@@ -1,7 +1,5 @@
 import json
-import os
 import shutil
-import tempfile
 from io import BytesIO
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -38,6 +36,7 @@ class DocumentAPITestCase(TestCase):
         self.url = reverse("document-api")
         # Reset the global RAG instance
         import rag.views as views_module
+
         views_module._rag = None
         # Clean up test data directory
         test_data_dir = Path("/tmp/test_rag_data")
@@ -85,7 +84,7 @@ class DocumentAPITestCase(TestCase):
         file_content = b"This is a test document with some content."
         file = BytesIO(file_content)
         file.name = "test.txt"
-        file.content_type = "text/plain"
+        # file.content_type = "text/plain"
 
         response = self.client.post(
             self.url,
@@ -102,14 +101,16 @@ class DocumentAPITestCase(TestCase):
     def test_post_load_empty_file(self, mock_get_rag):
         """Test POST load action with an empty file."""
         mock_rag = MagicMock()
-        mock_rag.add_document.side_effect = ValueError("File is empty or contains no text")
+        mock_rag.add_document.side_effect = ValueError(
+            "File is empty or contains no text"
+        )
         mock_rag.document_names.return_value = []
         mock_get_rag.return_value = mock_rag
 
         file_content = b""
         file = BytesIO(file_content)
         file.name = "empty.txt"
-        file.content_type = "text/plain"
+        # file.content_type = "text/plain"
 
         response = self.client.post(
             self.url,
@@ -132,11 +133,11 @@ class DocumentAPITestCase(TestCase):
 
         file1 = BytesIO(b"Content of file 1")
         file1.name = "test1.txt"
-        file1.content_type = "text/plain"
+        # file1.content_type = "text/plain"
 
         file2 = BytesIO(b"Content of file 2")
         file2.name = "test2.txt"
-        file2.content_type = "text/plain"
+        # file2.content_type = "text/plain"
 
         response = self.client.post(
             self.url,
@@ -158,7 +159,7 @@ class DocumentAPITestCase(TestCase):
         # First load a document
         file = BytesIO(b"Test content")
         file.name = "test.txt"
-        file.content_type = "text/plain"
+        # file.content_type = "text/plain"
 
         self.client.post(
             self.url,
@@ -199,6 +200,7 @@ class ChatAPITestCase(TestCase):
         self.url = reverse("chat-api")
         # Reset the global RAG instance
         import rag.views as views_module
+
         views_module._rag = None
         # Clean up test data directory
         test_data_dir = Path("/tmp/test_rag_data")
@@ -293,4 +295,3 @@ class ChatAPITestCase(TestCase):
         data = response.json()
         self.assertIn("answer", data)
         self.assertIn("no documents", data["answer"])
-

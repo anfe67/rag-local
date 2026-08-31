@@ -11,7 +11,7 @@ dependencies = [
   "pre-commit>=4.6.2",
   "requests>=2.34.2",
   "ruff>=0.16.5",
-  "ty>=0.0.75",
+  "ty>=0.0.75"
 ]
 
 [project.scripts]

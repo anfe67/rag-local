@@ -10,7 +10,6 @@ from django.views.decorators.http import require_http_methods
 
 from .services import LocalRag, OllamaError
 
-
 _rag = None
 
 
@@ -18,7 +17,10 @@ def _get_rag() -> LocalRag:
     global _rag
 
     if _rag is None:
-        data_dir = Path(settings.BASE_DIR) / "rag_data"
+        data_dir = Path(
+            getattr(settings, "RAG_DATA_DIR", None)
+            or (Path(settings.BASE_DIR) / "rag_data")
+        )
 
         _rag = LocalRag(
             data_dir=data_dir,
@@ -74,18 +76,16 @@ def document_api(request):
         return JsonResponse({"documents": rag.document_names()})
 
     # POST: load or clear
-    action = (
-        request.POST.get("action")
-        or request.GET.get("action")
-        or "load"
-    ).lower()
+    action = (request.POST.get("action") or request.GET.get("action") or "load").lower()
 
     if action == "clear":
         rag.clear()
-        return JsonResponse({
-            "status": "cleared",
-            "documents": rag.document_names(),
-        })
+        return JsonResponse(
+            {
+                "status": "cleared",
+                "documents": rag.document_names(),
+            }
+        )
 
     if action != "load":
         return JsonResponse(
@@ -114,11 +114,13 @@ def document_api(request):
             rag.add_document(name, text)
             loaded.append(name)
 
-        except BaseException as exc:
-            errors.append({
-                "file": name,
-                "error": str(exc),
-            })
+        except (ValueError, OSError, UnicodeDecodeError) as exc:
+            errors.append(
+                {
+                    "file": name,
+                    "error": str(exc),
+                }
+            )
 
     status_code = 200 if loaded else 400
 
@@ -150,10 +152,12 @@ def chat_api(request):
     except OllamaError as exc:
         return JsonResponse({"error": str(exc)}, status=502)
 
-    return JsonResponse({
-        "question": question,
-        "answer": answer,
-    })
+    return JsonResponse(
+        {
+            "question": question,
+            "answer": answer,
+        }
+    )
 
 
 def documents_page(request):
