@@ -95,6 +95,27 @@
     }
   }
 
+  async function checkDocumentVersion() {
+    try {
+      const res = await fetch("/api/documents/");
+      const data = await res.json();
+      const currentDocHash = JSON.stringify(data.documents || []).slice(0, 32);
+      const storedDocHash = localStorage.getItem('docHash');
+
+      if (storedDocHash && storedDocHash !== currentDocHash) {
+        // Documents have changed, clear chat history
+        localStorage.removeItem('chatHistory');
+        chatHistory.innerHTML = '<div class="text-muted text-center">Start a conversation by asking a question below</div>';
+        messageCount = 0;
+      }
+
+      // Store current document hash
+      localStorage.setItem('docHash', currentDocHash);
+    } catch (error) {
+      console.error('Failed to check document version:', error);
+    }
+  }
+
   function addMessageToDOM(content, isUser, timestamp = null) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
@@ -218,6 +239,8 @@
   });
 
   // Load chat history on page load
-  loadChatHistory();
+  checkDocumentVersion().then(() => {
+    loadChatHistory();
+  });
 </script>
 {% endblock %}

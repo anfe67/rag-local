@@ -118,8 +118,57 @@
     document.getElementById("embed-model").textContent = modelInfo.embed_model || "-";
   }
 
+  async function checkAndClearChatHistory() {
+    const saved = localStorage.getItem('chatHistory');
+    if (!saved) return true;
+
+    const messages = JSON.parse(saved);
+    if (messages.length === 0) return true;
+
+    // Show confirmation dialog
+    const confirmed = confirm(
+      `You have ${messages.length} messages in your chat history.\n\n` +
+      "Would you like to save this chat history to a file before loading new documents?\n\n" +
+      "Click OK to save the chat history, or Cancel to proceed without saving."
+    );
+
+    if (confirmed) {
+      try {
+        const res = await fetch("/api/chat/export/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ messages }),
+        });
+
+        if (res.ok) {
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'chat_export.txt';
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }
+      } catch (error) {
+        console.error('Failed to export chat:', error);
+        alert('Failed to export chat history. Proceeding with document load.');
+      }
+    }
+
+    // Clear the chat history
+    localStorage.removeItem('chatHistory');
+    return true;
+  }
+
   document.getElementById("load-form").addEventListener("submit", async (e) => {
     e.preventDefault();
+
+    // Check and handle chat history before loading new documents
+    await checkAndClearChatHistory();
 
     const form = e.target;
     const fd = new FormData(form);
@@ -140,6 +189,9 @@
   });
 
   document.getElementById("clear-btn").addEventListener("click", async () => {
+    // Check and handle chat history before clearing documents
+    await checkAndClearChatHistory();
+
     statusEl.textContent = "Clearing...";
     statusEl.style.display = "block";
 

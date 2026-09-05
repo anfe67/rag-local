@@ -166,6 +166,47 @@ def chat_api(request):
     )
 
 
+@csrf_exempt
+@require_http_methods(["POST"])
+def export_chat_api(request):
+    try:
+        payload = json.loads(request.body or b"{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON body"}, status=400)
+
+    messages = payload.get("messages", [])
+    if not isinstance(messages, list):
+        return JsonResponse({"error": "messages must be a list"}, status=400)
+
+    from datetime import datetime
+
+    from django.http import HttpResponse
+
+    # Create a text export
+    lines = []
+    lines.append(
+        f"Chat Export - {datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S')}"
+    )
+    lines.append("=" * 50)
+    lines.append("")
+
+    for msg in messages:
+        role = "You" if msg.get("isUser") else "Assistant"
+        timestamp = msg.get("timestamp", "")
+        content = msg.get("content", "")
+        lines.append(f"[{role}] {timestamp}")
+        lines.append(content)
+        lines.append("")
+
+    response = HttpResponse("\n".join(lines), content_type="text/plain")
+    filename = (
+        f"chat_export_{datetime.now().astimezone().strftime('%Y%m%d_%H%M%S')}.txt"
+    )
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    return response
+
+
 def documents_page(request):
     return render(request, "rag/documents.html")
 
