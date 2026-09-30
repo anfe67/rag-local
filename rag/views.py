@@ -33,7 +33,7 @@ def _get_rag() -> LocalRag:
                 "llama3.1:8b",
             ),
             embed_model=os.environ.get(
-                "OLLAMA_EMBED_MODEL",
+                "OLLAMA_MODEL",
                 "nomic-embed-text",
             ),
             chunk_max_chars=int(os.environ.get("RAG_CHUNK_MAX_CHARS", "900")),

@@ -47,7 +47,10 @@ class DocumentAPITestCase(TestCase):
         """Test GET request returns empty list when no documents loaded."""
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"documents": []})
+        data = response.json()
+        self.assertEqual(data["documents"], [])
+        self.assertIn("vector_stats", data)
+        self.assertIn("model_info", data)
 
     def test_post_clear_empty(self):
         """Test POST clear action with no documents."""
